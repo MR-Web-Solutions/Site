@@ -5,6 +5,14 @@ const links = document.querySelector('.nav-links');
 if (button) button.addEventListener('click', () => { links.classList.toggle('open'); button.setAttribute('aria-expanded', links.classList.contains('open')); });
 document.querySelectorAll('.nav-links a').forEach((link) => link.addEventListener('click', () => links?.classList.remove('open')));
 
+if (links && !links.querySelector('[href="faq.html"]')) {
+  const faqLink = document.createElement('a');
+  faqLink.href = 'faq.html';
+  faqLink.textContent = 'FAQs';
+  const contactButton = links.querySelector('[href="contact.html"]');
+  links.insertBefore(faqLink, contactButton || null);
+}
+
 const form = document.querySelector('form');
 if (form) {
   const selectedPackage = new URLSearchParams(window.location.search).get('package');
@@ -36,4 +44,13 @@ if (heroMessage) {
   let index = Math.floor(Math.random() * messages.length);
   const show = () => { heroMessage.classList.remove('message-visible'); window.setTimeout(() => { heroMessage.innerHTML = messages[index]; heroMessage.classList.add('message-visible'); }, 180); };
   show(); window.setInterval(() => { index = (index + 1) % messages.length; show(); }, 5 * 60 * 1000);
+}
+
+const footerLinks = document.querySelector('.footer-links');
+if (footerLinks && !footerLinks.querySelector('[href="faq.html"]')) {
+  const faqLink = document.createElement('a');
+  faqLink.href = 'faq.html';
+  faqLink.textContent = 'FAQs';
+  const contactLink = footerLinks.querySelector('[href="contact.html"]');
+  footerLinks.insertBefore(faqLink, contactLink || null);
 }
