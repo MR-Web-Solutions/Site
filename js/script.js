@@ -2,6 +2,7 @@ import { SUPABASE_URL, SUPABASE_PUBLISHABLE_KEY } from './supabase-config.js';
 
 const button = document.querySelector('.menu-button');
 const links = document.querySelector('.nav-links');
+if (button && !button.hasAttribute('aria-expanded')) button.setAttribute('aria-expanded', 'false');
 if (button) button.addEventListener('click', () => { links.classList.toggle('open'); button.setAttribute('aria-expanded', links.classList.contains('open')); });
 document.querySelectorAll('.nav-links a').forEach((link) => link.addEventListener('click', () => links?.classList.remove('open')));
 
