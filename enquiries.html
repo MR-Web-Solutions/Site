@@ -1,0 +1,14 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Enquiries | MR Web Solutions</title><link rel="icon" type="image/jpeg" href="assets/mr-logo-light.jpeg"><link rel="stylesheet" href="css/styles.css">
+</head>
+<body class="dashboard-body">
+<main class="dashboard container">
+  <a class="brand dashboard-brand" href="index.html"><img src="assets/mr-logo-light.jpeg" alt="MR logo">WEB SOLUTIONS</a>
+  <section id="login-panel" class="login-panel"><div class="eyebrow">Staff access</div><h1>Enquiries dashboard</h1><p>Sign in with an approved staff email to view website enquiries.</p><form id="login-form"><label for="staff-email">Email address</label><input id="staff-email" type="email" required autocomplete="email"><label for="staff-password">Password</label><input id="staff-password" type="password" required autocomplete="current-password"><button class="button" type="submit">Sign in →</button><p id="login-message" class="dashboard-message" aria-live="polite"></p></form></section>
+  <section id="dashboard-panel" hidden><div class="dashboard-top"><div><div class="eyebrow">Staff access</div><h1>Website enquiries</h1><p id="enquiry-count">Loading enquiries…</p></div><button id="sign-out" class="button ghost" type="button">Sign out</button></div><div id="enquiries-list" class="enquiries-list"></div></section>
+</main>
+<script type="module" src="js/enquiries.js"></script>
+</body></html>
