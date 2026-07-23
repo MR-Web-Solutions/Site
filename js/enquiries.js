@@ -15,6 +15,7 @@ const isLocalPreview = ['localhost', '127.0.0.1'].includes(window.location.hostn
   && new URLSearchParams(window.location.search).get('preview') === 'finance';
 let transactions = [];
 let allocations = [];
+let budgets = [];
 
 function monthValue(date = new Date()) {
   const offset = date.getTimezoneOffset();
@@ -24,6 +25,19 @@ function monthValue(date = new Date()) {
 function todayValue() {
   const date = new Date();
   return new Date(date.getTime() - date.getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+}
+
+function shiftMonth(value, offset) {
+  const [year, month] = value.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1 + offset, 1)).toISOString().slice(0, 7);
+}
+
+function updateBudgetMonthLimits() {
+  const input = $('#budget-month');
+  const start = monthValue();
+  input.min = start;
+  input.max = shiftMonth(start, Number($('#budget-horizon').value) - 1);
+  if (!input.value || input.value < input.min || input.value > input.max) input.value = shiftMonth(start, 1);
 }
 
 function monthBounds(value) {
@@ -37,6 +51,13 @@ function showFinanceMessage(message, type = 'success') {
   financeMessage.textContent = message;
   financeMessage.className = `finance-notice show ${type}`;
   window.setTimeout(() => { financeMessage.className = 'finance-notice'; }, 4500);
+}
+
+function showBudgetMessage(message, type = 'success') {
+  const element = $('#budget-message');
+  element.textContent = message;
+  element.className = `finance-notice show ${type}`;
+  window.setTimeout(() => { element.className = 'finance-notice'; }, 4500);
 }
 
 function displayEnquiries(rows) {
@@ -158,6 +179,111 @@ async function loadFinances() {
   renderFinanceSummary();
 }
 
+function budgetTotals() {
+  const income = budgets.filter((entry) => entry.type === 'income').reduce((sum, entry) => sum + Number(entry.amount), 0);
+  const expenses = budgets.filter((entry) => entry.type === 'expense').reduce((sum, entry) => sum + Number(entry.amount), 0);
+  return { income, expenses, balance: income - expenses };
+}
+
+function renderBudgetSummary() {
+  const totals = budgetTotals();
+  $('#budget-income-total').textContent = currency.format(totals.income);
+  $('#budget-expense-total').textContent = currency.format(totals.expenses);
+  $('#budget-balance-total').textContent = currency.format(totals.balance);
+  $('#budget-balance-total').classList.toggle('negative', totals.balance < 0);
+}
+
+function renderBudgetMonths() {
+  const container = $('#budget-months');
+  const horizon = Number($('#budget-horizon').value);
+  const start = monthValue();
+  container.innerHTML = '';
+  for (let index = 0; index < horizon; index += 1) {
+    const period = shiftMonth(start, index);
+    const periodItems = budgets.filter((entry) => entry.period_month.slice(0, 7) === period);
+    const income = periodItems.filter((entry) => entry.type === 'income').reduce((sum, entry) => sum + Number(entry.amount), 0);
+    const expenses = periodItems.filter((entry) => entry.type === 'expense').reduce((sum, entry) => sum + Number(entry.amount), 0);
+    const balance = income - expenses;
+    const card = document.createElement('article');
+    card.className = 'budget-month-card';
+    const label = new Date(`${period}-01T00:00:00`).toLocaleDateString('en-ZA', { month: 'short', year: 'numeric' });
+    card.innerHTML = `<div class="budget-month-top"><strong>${label}</strong><span class="${balance < 0 ? 'negative' : 'positive'}">${currency.format(balance)}</span></div>
+      <div class="budget-bar"><span></span></div>
+      <div class="budget-month-details"><span>Income <b>${currency.format(income)}</b></span><span>Costs <b>${currency.format(expenses)}</b></span></div>`;
+    const maximum = Math.max(income, expenses, 1);
+    card.querySelector('.budget-bar span').style.width = `${Math.min(100, Math.abs(balance) / maximum * 100)}%`;
+    card.querySelector('.budget-bar').classList.toggle('negative', balance < 0);
+    container.append(card);
+  }
+}
+
+function renderBudgetItems() {
+  const body = $('#budget-body');
+  body.innerHTML = '';
+  $('#budget-count').textContent = `${budgets.length} ${budgets.length === 1 ? 'estimate' : 'estimates'}`;
+  $('#budget-empty').hidden = budgets.length > 0;
+  budgets.forEach((entry) => {
+    const row = document.createElement('tr');
+    const period = entry.period_month.slice(0, 7);
+    const monthLabel = new Date(`${period}-01T00:00:00`).toLocaleDateString('en-ZA', { month: 'long', year: 'numeric' });
+    row.innerHTML = `<td>${monthLabel}</td><td><span class="forecast-type ${entry.type}">${entry.type === 'income' ? 'Expected income' : 'Planned expense'}</span></td><td></td><td></td><td class="amount ${entry.type}">${currency.format(Number(entry.amount))}</td><td></td>`;
+    row.children[2].textContent = entry.category;
+    row.children[3].textContent = entry.description;
+    const remove = document.createElement('button');
+    remove.type = 'button'; remove.className = 'icon-button danger'; remove.setAttribute('aria-label', `Delete forecast ${entry.description}`); remove.textContent = '×';
+    remove.addEventListener('click', () => deleteBudgetItem(entry));
+    row.lastElementChild.append(remove);
+    body.append(row);
+  });
+  renderBudgetSummary();
+  renderBudgetMonths();
+}
+
+async function loadBudgets() {
+  if (isLocalPreview) { renderBudgetItems(); return; }
+  const start = monthValue();
+  const end = shiftMonth(start, Number($('#budget-horizon').value));
+  const { data, error } = await supabase.from('budget_forecasts').select('*')
+    .gte('period_month', `${start}-01`).lt('period_month', `${end}-01`)
+    .order('period_month', { ascending: true }).order('created_at', { ascending: true });
+  if (error) {
+    budgets = [];
+    showBudgetMessage('Budget storage is not ready yet. Run the updated finance-setup.sql in Supabase, then refresh this page.', 'error');
+  } else {
+    budgets = data || [];
+  }
+  renderBudgetItems();
+}
+
+$('#budget-form').addEventListener('submit', async (event) => {
+  event.preventDefault();
+  if (isLocalPreview) { showBudgetMessage('This preview uses sample figures. Sign in on the live site to save forecasts.', 'error'); return; }
+  const { data: { user } } = await supabase.auth.getUser();
+  const payload = {
+    period_month: `${$('#budget-month').value}-01`,
+    type: $('#budget-type').value,
+    amount: Number($('#budget-amount').value),
+    category: $('#budget-category').value.trim(),
+    description: $('#budget-description').value.trim(),
+    created_by: user?.email || null
+  };
+  const { error } = await supabase.from('budget_forecasts').insert(payload);
+  if (error) { showBudgetMessage(error.message, 'error'); return; }
+  event.target.reset();
+  $('#budget-month').value = shiftMonth(monthValue(), 1);
+  showBudgetMessage('Forecast item saved. Actual finances are unchanged.');
+  await loadBudgets();
+});
+
+async function deleteBudgetItem(entry) {
+  if (isLocalPreview) { showBudgetMessage('Sample forecasts cannot be changed in preview mode.', 'error'); return; }
+  if (!window.confirm(`Delete the forecast for ${entry.description}?`)) return;
+  const { error } = await supabase.from('budget_forecasts').delete().eq('id', entry.id);
+  if (error) { showBudgetMessage(error.message, 'error'); return; }
+  showBudgetMessage('Forecast item deleted.');
+  await loadBudgets();
+}
+
 $('#transaction-form').addEventListener('submit', async (event) => {
   event.preventDefault();
   if (isLocalPreview) { showFinanceMessage('This preview uses sample figures. Sign in on the live site to save records.', 'error'); return; }
@@ -277,6 +403,14 @@ $('#export-finances').addEventListener('click', () => {
   URL.revokeObjectURL(link.href);
 });
 
+document.querySelectorAll('.finance-tab').forEach((tab) => {
+  tab.addEventListener('click', async () => {
+    document.querySelectorAll('.finance-tab').forEach((button) => button.classList.toggle('is-active', button === tab));
+    document.querySelectorAll('.finance-workspace').forEach((view) => { view.hidden = view.id !== tab.dataset.financeView; });
+    if (tab.dataset.financeView === 'budget-finance-view') await loadBudgets();
+  });
+});
+
 document.querySelectorAll('.dashboard-tab').forEach((tab) => {
   tab.addEventListener('click', async () => {
     document.querySelectorAll('.dashboard-tab').forEach((button) => button.classList.toggle('is-active', button === tab));
@@ -306,10 +440,16 @@ $('#sign-out').addEventListener('click', async () => {
 
 $('#finance-month').value = monthValue();
 $('#transaction-date').value = todayValue();
+$('#budget-month').value = shiftMonth(monthValue(), 1);
+updateBudgetMonthLimits();
 addAllocationLine('Owner distribution', 50);
 addAllocationLine('Tax reserve', 25);
 addAllocationLine('Business reinvestment', 25);
 $('#finance-month').addEventListener('change', loadFinances);
+$('#budget-horizon').addEventListener('change', async () => {
+  updateBudgetMonthLimits();
+  await loadBudgets();
+});
 
 if (isLocalPreview) {
   transactions = [
@@ -331,6 +471,13 @@ if (isLocalPreview) {
       { recipient: 'Business reinvestment', percentage: 20, amount: 1256.20 }
     ]
   }];
+  budgets = [
+    { id: 'budget-1', period_month: `${shiftMonth(monthValue(), 1)}-01`, type: 'expense', amount: 400, category: 'Software', description: 'Codex subscription' },
+    { id: 'budget-2', period_month: `${shiftMonth(monthValue(), 1)}-01`, type: 'expense', amount: 300, category: 'Domains', description: 'Upcoming domain renewals' },
+    { id: 'budget-3', period_month: `${shiftMonth(monthValue(), 1)}-01`, type: 'income', amount: 3500, category: 'Website project', description: 'Expected client balance' },
+    { id: 'budget-4', period_month: `${shiftMonth(monthValue(), 2)}-01`, type: 'expense', amount: 900, category: 'Marketing', description: 'Campaign budget' },
+    { id: 'budget-5', period_month: `${shiftMonth(monthValue(), 2)}-01`, type: 'income', amount: 1800, category: 'Maintenance income', description: 'Care plan renewals' }
+  ];
   loginPanel.hidden = true;
   dashboardPanel.hidden = false;
   document.querySelectorAll('.dashboard-tab').forEach((tab) => tab.classList.toggle('is-active', tab.dataset.view === 'finance-view'));

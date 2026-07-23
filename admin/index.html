@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Admin | MR Web Solutions</title>
   <link rel="icon" type="image/jpeg" href="../assets/mr-logo-light.jpeg">
-  <link rel="stylesheet" href="../css/styles.css?v=finance-2">
+  <link rel="stylesheet" href="../css/styles.css?v=finance-3">
   <meta name="robots" content="noindex, nofollow">
 </head>
 <body class="dashboard-body">
@@ -52,15 +52,23 @@
       <div class="view-heading finance-toolbar">
         <div>
           <h2>Finance overview</h2>
-          <p>Record cash flow and decide how available profit should be allocated.</p>
+          <p>Keep recorded finances and future plans clearly separated.</p>
         </div>
-        <div class="toolbar-actions">
+      </div>
+
+      <nav class="finance-tabs" aria-label="Finance sections">
+        <button class="finance-tab is-active" type="button" data-finance-view="actual-finance-view"><span>Actuals</span><small>Recorded money</small></button>
+        <button class="finance-tab" type="button" data-finance-view="budget-finance-view"><span>Budget forecast</span><small>Future planning</small></button>
+      </nav>
+
+      <div id="actual-finance-view" class="finance-workspace">
+        <div class="actuals-label"><strong>Actual finances</strong><span>These figures affect profit</span></div>
+        <div class="toolbar-actions actuals-toolbar">
           <label class="compact-field" for="finance-month">Reporting month
             <input id="finance-month" type="month">
           </label>
           <button id="export-finances" class="button secondary small" type="button">Export CSV</button>
         </div>
-      </div>
 
       <div class="finance-summary" aria-label="Finance summary">
         <article class="summary-card income"><small>Income</small><strong id="income-total">R0.00</strong><span>For selected month</span></article>
@@ -135,9 +143,67 @@
         <div class="panel-heading"><div><div class="eyebrow">Distribution record</div><h3>Allocation history</h3></div></div>
         <div id="allocation-history" class="allocation-history"></div>
       </section>
+      </div>
+
+      <div id="budget-finance-view" class="finance-workspace budget-workspace" hidden>
+        <div class="budget-banner">
+          <div><div class="eyebrow">Planning only</div><h3>Budget forecast</h3><p>Expected income and planned costs are estimates. They never change your actual income, expenses or profit.</p></div>
+          <label class="compact-field" for="budget-horizon">Forecast period
+            <select id="budget-horizon"><option value="3">Next 3 months</option><option value="6" selected>Next 6 months</option><option value="12">Next 12 months</option></select>
+          </label>
+        </div>
+
+        <div class="budget-summary" aria-label="Budget forecast summary">
+          <article><small>Expected income</small><strong id="budget-income-total">R0.00</strong><span>Across forecast period</span></article>
+          <article><small>Planned expenses</small><strong id="budget-expense-total">R0.00</strong><span>Across forecast period</span></article>
+          <article><small>Forecast balance</small><strong id="budget-balance-total">R0.00</strong><span>Expected income less costs</span></article>
+        </div>
+
+        <div id="budget-message" class="finance-notice" aria-live="polite"></div>
+
+        <div class="budget-layout">
+          <section class="finance-panel budget-entry-panel">
+            <div class="panel-heading"><div><div class="eyebrow">New estimate</div><h3>Add a forecast item</h3></div><span class="planning-pill">Does not affect actuals</span></div>
+            <form id="budget-form">
+              <div class="form-row">
+                <div><label for="budget-type">Forecast type</label><select id="budget-type" required><option value="expense">Planned expense</option><option value="income">Expected income</option></select></div>
+                <div><label for="budget-amount">Expected amount (ZAR)</label><input id="budget-amount" type="number" min="0.01" step="0.01" required placeholder="400.00"></div>
+              </div>
+              <div class="form-row">
+                <div><label for="budget-month">Expected month</label><input id="budget-month" type="month" required></div>
+                <div><label for="budget-category">Category</label><input id="budget-category" list="budget-categories" required placeholder="e.g. Software"></div>
+              </div>
+              <datalist id="budget-categories">
+                <option value="Software"><option value="Domains"><option value="Hosting"><option value="Marketing">
+                <option value="Contractors"><option value="Equipment"><option value="Tax"><option value="Website project">
+                <option value="Maintenance income"><option value="Other">
+              </datalist>
+              <label for="budget-description">Item name or description</label>
+              <input id="budget-description" required placeholder="e.g. Codex subscription">
+              <button class="button budget-button" type="submit">Add to forecast</button>
+            </form>
+          </section>
+
+          <section class="finance-panel budget-chart-panel">
+            <div class="panel-heading"><div><div class="eyebrow">Month by month</div><h3>Forecast outlook</h3></div></div>
+            <div id="budget-months" class="budget-months"></div>
+          </section>
+        </div>
+
+        <section class="finance-panel budget-items-panel">
+          <div class="panel-heading"><div><div class="eyebrow">Planning ledger</div><h3>Forecast items</h3></div><span id="budget-count" class="muted-label">0 estimates</span></div>
+          <div class="table-scroll">
+            <table class="finance-table budget-table">
+              <thead><tr><th>Month</th><th>Forecast type</th><th>Category</th><th>Description</th><th>Expected amount</th><th></th></tr></thead>
+              <tbody id="budget-body"></tbody>
+            </table>
+          </div>
+          <p id="budget-empty" class="empty-state">No estimates entered for this forecast period.</p>
+        </section>
+      </div>
     </section>
   </section>
 </main>
-<script type="module" src="../js/enquiries.js?v=finance-2"></script>
+<script type="module" src="../js/enquiries.js?v=finance-3"></script>
 </body>
 </html>

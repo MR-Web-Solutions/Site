@@ -41,9 +41,24 @@ create table if not exists public.profit_allocation_items (
   amount numeric(12,2) not null check (amount >= 0)
 );
 
+create table if not exists public.budget_forecasts (
+  id uuid primary key default gen_random_uuid(),
+  created_at timestamptz not null default now(),
+  period_month date not null,
+  type text not null check (type in ('income', 'expense')),
+  amount numeric(12,2) not null check (amount > 0),
+  category text not null,
+  description text not null,
+  created_by text
+);
+
+create index if not exists budget_forecasts_period_idx
+on public.budget_forecasts (period_month asc);
+
 alter table public.financial_transactions enable row level security;
 alter table public.profit_allocations enable row level security;
 alter table public.profit_allocation_items enable row level security;
+alter table public.budget_forecasts enable row level security;
 
 create or replace function public.is_mr_web_staff()
 returns boolean
@@ -115,3 +130,20 @@ on public.profit_allocation_items for insert to authenticated with check (public
 drop policy if exists "Approved staff can delete allocation items" on public.profit_allocation_items;
 create policy "Approved staff can delete allocation items"
 on public.profit_allocation_items for delete to authenticated using (public.is_mr_web_staff());
+
+drop policy if exists "Approved staff can view budget forecasts" on public.budget_forecasts;
+create policy "Approved staff can view budget forecasts"
+on public.budget_forecasts for select to authenticated using (public.is_mr_web_staff());
+
+drop policy if exists "Approved staff can add budget forecasts" on public.budget_forecasts;
+create policy "Approved staff can add budget forecasts"
+on public.budget_forecasts for insert to authenticated with check (public.is_mr_web_staff());
+
+drop policy if exists "Approved staff can update budget forecasts" on public.budget_forecasts;
+create policy "Approved staff can update budget forecasts"
+on public.budget_forecasts for update to authenticated
+using (public.is_mr_web_staff()) with check (public.is_mr_web_staff());
+
+drop policy if exists "Approved staff can delete budget forecasts" on public.budget_forecasts;
+create policy "Approved staff can delete budget forecasts"
+on public.budget_forecasts for delete to authenticated using (public.is_mr_web_staff());
