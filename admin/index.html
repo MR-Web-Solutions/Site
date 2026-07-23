@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>Admin | MR Web Solutions</title>
+  <link rel="icon" type="image/jpeg" href="../assets/mr-logo-light.jpeg">
+  <link rel="stylesheet" href="../css/styles.css?v=finance-1">
+  <meta name="robots" content="noindex, nofollow">
+</head>
+<body class="dashboard-body">
+<main class="dashboard container">
+  <a class="brand dashboard-brand" href="../index.html"><img src="../assets/mr-logo-light.jpeg" alt="MR logo">WEB SOLUTIONS</a>
+
+  <section id="login-panel" class="login-panel">
+    <div class="eyebrow">Staff access</div>
+    <h1>Admin dashboard</h1>
+    <p>Sign in with an approved staff email to manage enquiries and business finances.</p>
+    <form id="login-form">
+      <label for="staff-email">Email address</label>
+      <input id="staff-email" type="email" required autocomplete="email">
+      <label for="staff-password">Password</label>
+      <input id="staff-password" type="password" required autocomplete="current-password">
+      <button class="button" type="submit">Sign in →</button>
+      <p id="login-message" class="dashboard-message" aria-live="polite"></p>
+    </form>
+  </section>
+
+  <section id="dashboard-panel" hidden>
+    <div class="dashboard-top">
+      <div>
+        <div class="eyebrow">Staff workspace</div>
+        <h1>Business dashboard</h1>
+        <p>Keep leads and finances together in one secure place.</p>
+      </div>
+      <button id="sign-out" class="button ghost" type="button">Sign out</button>
+    </div>
+
+    <nav class="dashboard-tabs" aria-label="Admin sections">
+      <button class="dashboard-tab is-active" type="button" data-view="enquiries-view">Enquiries</button>
+      <button class="dashboard-tab" type="button" data-view="finance-view">Finances</button>
+    </nav>
+
+    <section id="enquiries-view" class="dashboard-view">
+      <div class="view-heading">
+        <div><h2>Website enquiries</h2><p id="enquiry-count">Loading enquiries…</p></div>
+      </div>
+      <div id="enquiries-list" class="enquiries-list"></div>
+    </section>
+
+    <section id="finance-view" class="dashboard-view" hidden>
+      <div class="view-heading finance-toolbar">
+        <div>
+          <h2>Finance overview</h2>
+          <p>Record cash flow and decide how available profit should be allocated.</p>
+        </div>
+        <div class="toolbar-actions">
+          <label class="compact-field" for="finance-month">Reporting month
+            <input id="finance-month" type="month">
+          </label>
+          <button id="export-finances" class="button secondary small" type="button">Export CSV</button>
+        </div>
+      </div>
+
+      <div class="finance-summary" aria-label="Finance summary">
+        <article class="summary-card income"><small>Income</small><strong id="income-total">R0.00</strong><span>For selected month</span></article>
+        <article class="summary-card expense"><small>Expenses</small><strong id="expense-total">R0.00</strong><span>For selected month</span></article>
+        <article class="summary-card profit"><small>Net profit</small><strong id="profit-total">R0.00</strong><span>Income less expenses</span></article>
+        <article class="summary-card allocated"><small>Profit allocated</small><strong id="allocated-total">R0.00</strong><span id="remaining-profit">R0.00 remains</span></article>
+      </div>
+
+      <div id="finance-message" class="finance-notice" aria-live="polite"></div>
+
+      <div class="finance-layout">
+        <section class="finance-panel">
+          <div class="panel-heading"><div><div class="eyebrow">Cash flow</div><h3>Add a transaction</h3></div></div>
+          <form id="transaction-form">
+            <div class="form-row">
+              <div><label for="transaction-type">Type</label><select id="transaction-type" required><option value="income">Income</option><option value="expense">Expense</option></select></div>
+              <div><label for="transaction-amount">Amount (ZAR)</label><input id="transaction-amount" type="number" min="0.01" step="0.01" required placeholder="0.00"></div>
+            </div>
+            <div class="form-row">
+              <div><label for="transaction-date">Date</label><input id="transaction-date" type="date" required></div>
+              <div><label for="transaction-category">Category</label><input id="transaction-category" list="finance-categories" required placeholder="e.g. Website project"></div>
+            </div>
+            <datalist id="finance-categories">
+              <option value="Website project"><option value="Maintenance plan"><option value="Domain and hosting">
+              <option value="Software"><option value="Marketing"><option value="Contractors"><option value="Travel">
+              <option value="Bank fees"><option value="Office"><option value="Other">
+            </datalist>
+            <div class="form-row">
+              <div><label for="transaction-method">Payment method</label><select id="transaction-method"><option>Bank transfer</option><option>Card</option><option>Cash</option><option>Debit order</option><option>Other</option></select></div>
+              <div><label for="transaction-reference">Reference / description</label><input id="transaction-reference" required placeholder="Invoice, supplier or note"></div>
+            </div>
+            <button class="button" type="submit">Save transaction</button>
+          </form>
+        </section>
+
+        <section class="finance-panel allocation-panel">
+          <div class="panel-heading">
+            <div><div class="eyebrow">Profit appropriation</div><h3>Allocate this month’s profit</h3></div>
+            <span id="allocation-profit-base" class="profit-base">R0.00 available</span>
+          </div>
+          <p class="panel-copy">Set aside profit for owners, tax, reinvestment or reserves. These allocations do not count as operating expenses.</p>
+          <form id="allocation-form">
+            <label for="allocation-label">Allocation label</label>
+            <input id="allocation-label" required placeholder="e.g. July 2026 profit allocation">
+            <div class="allocation-table-heading"><span>Recipient or purpose</span><span>Percentage</span><span>Amount</span><span></span></div>
+            <div id="allocation-items"></div>
+            <button id="add-allocation-item" class="text-button" type="button">+ Add allocation line</button>
+            <div class="allocation-totals">
+              <span>Total</span>
+              <strong id="allocation-percentage">0%</strong>
+              <strong id="allocation-amount">R0.00</strong>
+            </div>
+            <label for="allocation-notes">Notes (optional)</label>
+            <textarea id="allocation-notes" rows="2" placeholder="Reason for this distribution or approval note"></textarea>
+            <button class="button" type="submit">Save profit allocation</button>
+          </form>
+        </section>
+      </div>
+
+      <section class="finance-panel transactions-panel">
+        <div class="panel-heading"><div><div class="eyebrow">Ledger</div><h3>Transactions</h3></div><span id="transaction-count" class="muted-label">0 records</span></div>
+        <div class="table-scroll">
+          <table class="finance-table">
+            <thead><tr><th>Date</th><th>Type</th><th>Category</th><th>Description</th><th>Method</th><th>Amount</th><th></th></tr></thead>
+            <tbody id="transactions-body"></tbody>
+          </table>
+        </div>
+        <p id="transactions-empty" class="empty-state">No transactions recorded for this month.</p>
+      </section>
+
+      <section class="finance-panel allocation-history-panel">
+        <div class="panel-heading"><div><div class="eyebrow">Distribution record</div><h3>Allocation history</h3></div></div>
+        <div id="allocation-history" class="allocation-history"></div>
+      </section>
+    </section>
+  </section>
+</main>
+<script type="module" src="../js/enquiries.js?v=finance-1"></script>
+</body>
+</html>
