@@ -300,7 +300,7 @@ loginForm.addEventListener('submit', async (event) => {
 });
 
 $('#sign-out').addEventListener('click', async () => {
-  await supabase.auth.signOut();
+  await supabase.auth.signOut({ scope: 'local' });
   dashboardPanel.hidden = true; loginPanel.hidden = false; loginForm.reset();
 });
 
@@ -311,7 +311,6 @@ addAllocationLine('Tax reserve', 25);
 addAllocationLine('Business reinvestment', 25);
 $('#finance-month').addEventListener('change', loadFinances);
 
-const { data: { session } } = await supabase.auth.getSession();
 if (isLocalPreview) {
   transactions = [
     { id: 'demo-1', transaction_date: `${monthValue()}-21`, type: 'income', amount: 6800, category: 'Website project', description: 'Business Website final payment', payment_method: 'Bank transfer' },
@@ -340,6 +339,8 @@ if (isLocalPreview) {
   renderAllocationHistory();
   renderFinanceSummary();
   showFinanceMessage('Preview mode — the figures below are examples and will not be saved.');
-} else if (session) {
-  openDashboard();
+} else {
+  await supabase.auth.signOut({ scope: 'local' });
+  dashboardPanel.hidden = true;
+  loginPanel.hidden = false;
 }
